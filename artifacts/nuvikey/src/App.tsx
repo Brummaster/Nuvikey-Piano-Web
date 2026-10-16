@@ -60,7 +60,8 @@ function Keyboard({ octave, activeNotes, instrument, onStart, onStop }: {
   onStart: (id: string, midi: number, instrument: InstrumentId, velocity?: number) => void;
   onStop: (id: string) => void;
 }) {
-  const pointerIds = useRef(new Map<number, string>());
+  const pointerIds = useRef(new Map<number, { voiceId: string | null; midi: number | null }>());
+  const voiceSequence = useRef(0);
   const keys = useMemo<KeyDescription[]>(() => {
     const startMidi = (octave + 1) * 12;
     let whiteIndex = 0;
@@ -82,37 +83,62 @@ function Keyboard({ octave, activeNotes, instrument, onStart, onStop }: {
   const press = useCallback((event: PointerEvent<HTMLButtonElement>, key: KeyDescription) => {
     if (event.button !== 0 && event.pointerType === 'mouse') return;
     event.preventDefault();
-    const id = `pointer-${event.pointerId}`;
-    pointerIds.current.set(event.pointerId, id);
-    onStart(id, key.midi, instrument, event.pointerType === 'mouse' ? 0.76 : 0.86);
+    if (event.pointerType !== 'mouse') {
+      event.currentTarget.dataset.pointerFocus = 'true';
+    }
+    const voiceId = `pointer-${event.pointerId}-${++voiceSequence.current}`;
+    pointerIds.current.set(event.pointerId, { voiceId, midi: key.midi });
+    onStart(voiceId, key.midi, instrument, event.pointerType === 'mouse' ? 0.76 : 0.86);
     event.currentTarget.setPointerCapture(event.pointerId);
   }, [instrument, onStart]);
 
-  const release = useCallback((event: PointerEvent<HTMLButtonElement>) => {
-    const id = pointerIds.current.get(event.pointerId);
-    if (id) {
-      onStop(id);
-      pointerIds.current.delete(event.pointerId);
+  const move = useCallback((event: PointerEvent<HTMLButtonElement>) => {
+    const active = pointerIds.current.get(event.pointerId);
+    if (!active) return;
+
+    const target = document
+      .elementFromPoint(event.clientX, event.clientY)
+      ?.closest<HTMLElement>('[data-key-midi]');
+    const targetMidi = target ? Number(target.dataset.keyMidi) : null;
+    if (targetMidi === active.midi) return;
+
+    if (active.voiceId) onStop(active.voiceId);
+    if (targetMidi === null || Number.isNaN(targetMidi)) {
+      pointerIds.current.set(event.pointerId, { voiceId: null, midi: null });
+      return;
     }
+
+    const voiceId = `pointer-${event.pointerId}-${++voiceSequence.current}`;
+    pointerIds.current.set(event.pointerId, { voiceId, midi: targetMidi });
+    onStart(voiceId, targetMidi, instrument, event.pointerType === 'mouse' ? 0.76 : 0.86);
+  }, [instrument, onStart, onStop]);
+
+  const release = useCallback((event: PointerEvent<HTMLButtonElement>) => {
+    const active = pointerIds.current.get(event.pointerId);
+    if (active?.voiceId) onStop(active.voiceId);
+    pointerIds.current.delete(event.pointerId);
   }, [onStop]);
 
   const whiteKeys = keys.filter((key) => !key.isBlack);
   const blackKeys = keys.filter((key) => key.isBlack);
 
   return (
-    <div className="keybed" aria-label={`Teclado de piano de ${octave} octavas`} data-testid="keyboard">
+    <div className="keybed" aria-label={`Teclado de dos octavas desde Do${octave}`} data-testid="keyboard">
       {whiteKeys.map((key) => (
         <button
           key={key.midi}
           type="button"
           className={`white-key${activeNotes.includes(key.midi) ? ' active' : ''}`}
+          data-key-midi={key.midi}
           aria-label={`Tocar ${key.accessibleLabel}`}
           aria-pressed={activeNotes.includes(key.midi)}
           data-testid={`key-${key.label.replace('♯', 'sharp')}-${key.midi}`}
           onPointerDown={(event) => press(event, key)}
+          onPointerMove={move}
           onPointerUp={release}
           onPointerCancel={release}
           onLostPointerCapture={release}
+          onBlur={(event) => { delete event.currentTarget.dataset.pointerFocus; }}
         >
           <span className="key-note">{key.label}</span>
         </button>
@@ -122,14 +148,17 @@ function Keyboard({ octave, activeNotes, instrument, onStart, onStop }: {
           key={key.midi}
           type="button"
           className={`black-key${activeNotes.includes(key.midi) ? ' active' : ''}`}
+          data-key-midi={key.midi}
           style={{ left: `${((key.whiteIndex - 0.29) / 14) * 100}%` }}
           aria-label={`Tocar ${key.accessibleLabel}`}
           aria-pressed={activeNotes.includes(key.midi)}
           data-testid={`key-${key.label.replace('♯', 'sharp')}-${key.midi}`}
           onPointerDown={(event) => press(event, key)}
+          onPointerMove={move}
           onPointerUp={release}
           onPointerCancel={release}
           onLostPointerCapture={release}
+          onBlur={(event) => { delete event.currentTarget.dataset.pointerFocus; }}
         >
           <span className="key-note">{key.label}</span>
         </button>
@@ -218,7 +247,10 @@ function Home() {
                 aria-pressed={instrument === item.id}
                 aria-label={`Seleccionar ${item.label}`}
                 data-testid={`instrument-${item.id}`}
-                onClick={() => setInstrument(item.id)}
+                onClick={() => {
+                  setInstrument(item.id);
+                  void engine.prepareInstrument(item.id);
+                }}
               >
                 {item.label}
               </button>
@@ -301,7 +333,7 @@ function Home() {
           onStop={engine.stopNote}
         />
         <div className="keyboard-bottom">
-          <span>Mapa de teclas <strong>A — ' / 24 notas</strong></span>
+          <span>Toca, mantén o desliza</span>
           <span>Respuesta <strong>dinámica</strong></span>
         </div>
       </section>

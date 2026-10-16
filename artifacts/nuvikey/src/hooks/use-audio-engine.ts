@@ -177,6 +177,7 @@ export function useAudioEngine() {
   const voicesRef = useRef(new Map<string, AudioVoice>());
   const allVoicesRef = useRef(new Set<AudioVoice>());
   const pendingRef = useRef(new Map<string, symbol>());
+  const pendingNotesRef = useRef(new Map<symbol, number>());
   const cancelledRef = useRef(new Set<symbol>());
   const sustainRef = useRef(false);
   const volumeRef = useRef(0.78);
@@ -191,10 +192,10 @@ export function useAudioEngine() {
   const [bpm, setBpmState] = useState(96);
 
   const syncNotes = useCallback(() => {
-    const notes = Array.from(voicesRef.current.values())
+    const activeVoices = Array.from(voicesRef.current.values())
       .filter((voice) => !voice.released)
       .map((voice) => voice.note);
-    setActiveNotes(Array.from(new Set(notes)));
+    setActiveNotes(Array.from(new Set([...activeVoices, ...pendingNotesRef.current.values()])));
   }, []);
 
   const releaseVoice = useCallback((voice: AudioVoice, fast = false, forceStop = false) => {
@@ -229,13 +230,18 @@ export function useAudioEngine() {
     const existing = voicesRef.current.get(id);
     if (existing) releaseVoice(existing, true, true);
     const previousPending = pendingRef.current.get(id);
-    if (previousPending) cancelledRef.current.add(previousPending);
+    if (previousPending) {
+      cancelledRef.current.add(previousPending);
+      pendingNotesRef.current.delete(previousPending);
+    }
     const token = Symbol(id);
     const graph = getGraph(graphRef);
     graph.master.gain.value = volumeRef.current * 0.68;
     graph.wet.gain.value = reverbRef.current * 0.72;
     graph.dry.gain.value = 1 - reverbRef.current * 0.16;
     pendingRef.current.set(id, token);
+    pendingNotesRef.current.set(token, note);
+    syncNotes();
     try {
       await graph.context.resume();
       setStatus('loading');
@@ -310,17 +316,25 @@ export function useAudioEngine() {
       setStatusMessage('Muestras listas');
       syncNotes();
     } catch (error) {
-      setStatus('error');
-      setStatusMessage(error instanceof Error ? error.message : 'No se pudieron cargar las muestras.');
+      if (pendingRef.current.get(id) === token && !cancelledRef.current.has(token)) {
+        setStatus('error');
+        setStatusMessage(error instanceof Error ? error.message : 'No se pudieron cargar las muestras.');
+      }
     } finally {
       if (pendingRef.current.get(id) === token) pendingRef.current.delete(id);
+      pendingNotesRef.current.delete(token);
       cancelledRef.current.delete(token);
+      syncNotes();
     }
   }, [releaseVoice, syncNotes]);
 
   const stopNote = useCallback((id: string) => {
     const token = pendingRef.current.get(id);
-    if (token) cancelledRef.current.add(token);
+    if (token) {
+      cancelledRef.current.add(token);
+      pendingNotesRef.current.delete(token);
+      syncNotes();
+    }
     const voice = voicesRef.current.get(id);
     if (!voice) return;
     if (sustainRef.current) {
@@ -332,10 +346,12 @@ export function useAudioEngine() {
 
   const stopAll = useCallback(() => {
     pendingRef.current.forEach((token) => cancelledRef.current.add(token));
+    pendingNotesRef.current.clear();
     sustainRef.current = false;
     setSustainState(false);
     allVoicesRef.current.forEach((voice) => releaseVoice(voice, true, true));
-  }, [releaseVoice]);
+    syncNotes();
+  }, [releaseVoice, syncNotes]);
 
   const setVolume = useCallback((value: number) => {
     volumeRef.current = value;
