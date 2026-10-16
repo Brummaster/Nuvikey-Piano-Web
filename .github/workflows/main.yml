@@ -1,11 +1,30 @@
 
-name: Check Nuvikey project
+
+name: Publish Nuvikey
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'artifacts/nuvikey/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/**'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
-  check:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Download project
@@ -25,10 +44,28 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Check Nuvikey build
+      - name: Build Nuvikey
         run: pnpm --filter @workspace/nuvikey build
         env:
           PORT: 5000
-          BASE_PATH: /
+          BASE_PATH: /Nuvikey-Piano-Web/
           NODE_ENV: production
-          
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload website
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: artifacts/nuvikey/dist/public
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Publish website
+        id: deployment
+        uses: actions/deploy-pages@v4
