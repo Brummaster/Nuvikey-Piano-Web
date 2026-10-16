@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Nuvikey"
+description = "A responsive online keyboard for iPhone, iPad, and desktop, with nine distinct playable instruments, polyphonic touch keys, sustain, reverb, octave controls, and a metronome."
+version = "1.0.0"
+id = "artifacts/nuvikey"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23450
+
+[services.development]
+run = "pnpm --filter @workspace/nuvikey run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/nuvikey", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/nuvikey/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23450"
+BASE_PATH = "/"

@@ -1,0 +1,112 @@
+Crea Nuvikey: un piano online con 9 instrumentos reales
+
+Quiero que construyas una aplicación web musical completa llamada Nuvikey, diseñada para funcionar perfectamente en iPad, iPhone y ordenador, directamente desde el navegador.
+
+No quiero una simple maqueta visual. Quiero una aplicación funcional, con teclas que se puedan tocar y sonidos musicales de calidad.
+
+1. Diseño
+
+* Estética moderna, elegante y minimalista, inspirada en Apple.
+* Fondo oscuro con degradados suaves, detalles verde lima y bordes redondeados.
+* Interfaz rápida, limpia y adaptable a pantallas táctiles.
+* Teclado de piano con teclas blancas y negras correctamente colocadas.
+* Animaciones suaves al pulsar las teclas.
+* Sin anuncios, sin ventanas emergentes y sin elementos innecesarios.
+
+2. Los nueve instrumentos
+
+Incluye estos instrumentos seleccionables:
+
+1. Piano acústico.
+2. Sintetizador.
+3. Rave Stab.
+4. Piano eléctrico.
+5. Flauta.
+6. Marimba.
+7. Clarinete.
+8. Órgano.
+9. Violín.
+
+Cada instrumento debe tener un sonido claramente diferente y reconocible. No basta con cambiar el nombre, el emoji o el tipo de onda de un oscilador.
+
+Utiliza muestras de audio realistas de instrumentos o una biblioteca de síntesis musical de calidad, según lo que sea viable. Puedes usar SoundFont, muestras de audio con licencia compatible o una biblioteca como Soundfont-player y Tone.js.
+
+Si utilizas archivos de audio, asegúrate de que las URL existan y funcionen. No simules que hay instrumentos reales si únicamente se reproducen pitidos.
+
+3. Sonido y resonancia
+
+Este es el requisito más importante.
+
+* Sonido polifónico: poder tocar varias notas al mismo tiempo.
+* Resonancia natural al soltar las teclas, como un piano real.
+* Cola de reverberación configurable y de buena calidad.
+* Ataque y caída naturales de las notas.
+* Sonido limpio, sin clics, cortes bruscos ni distorsión.
+* Las notas deben mantenerse mientras se pulsa una tecla, con una liberación musical al soltarla.
+* No cortar la reverberación cuando se suelta una tecla.
+* Implementar un pedal de sustain que permita mantener las notas.
+* Permitir tocar acordes y melodías rápidamente.
+* Evitar que las notas se queden sonando indefinidamente o que se acumulen sonidos sin control.
+
+Utiliza Web Audio API o Tone.js. Gestiona correctamente AudioContext, las voces activas y la liberación de las notas. En iOS, inicializa o reanuda el audio a partir de una interacción del usuario para cumplir las restricciones de Safari.
+
+4. Teclado musical
+
+* Al menos dos octavas visibles, con opción de cambiar de octava.
+* Teclas blancas y negras con dimensiones y posiciones correctas.
+* Compatible con pulsaciones táctiles y ratón.
+* Compatible con multitáctil para tocar varias notas simultáneamente.
+* Respuesta inmediata al pulsar.
+* Etiquetas con los nombres de las notas.
+* Evitar que al deslizar el dedo por el teclado se desplace accidentalmente toda la página.
+* Añadir soporte para teclado físico del ordenador.
+
+5. Controles musicales
+
+Incluye:
+
+* Selector de instrumento.
+* Control de volumen.
+* Intensidad de reverberación.
+* Control de sustain.
+* Cambio de octava.
+* Botón para activar o desactivar el metrónomo.
+* Indicador visual de las teclas pulsadas.
+
+Todos los controles deben funcionar realmente.
+
+6. Compatibilidad y rendimiento
+
+* Optimizada especialmente para Safari en iPad y iPhone.
+* Diseño adaptable a móvil, tablet y escritorio.
+* Sin necesidad de instalar una aplicación.
+* No exigir una cuenta para tocar el piano.
+* Evitar dependencias innecesarias.
+* No utilizar funciones que solo funcionen en un ordenador.
+* Cargar los sonidos de forma eficiente y mostrar el estado de carga cuando sea necesario.
+
+7. Calidad del código
+
+Organiza el proyecto en componentes reutilizables y separa la interfaz del motor de audio.
+
+Utiliza tecnologías web compatibles con Replit. Puedes utilizar React, TypeScript, CSS y Tone.js si son adecuados.
+
+No dejes botones sin funcionalidad, sonidos de prueba como resultado final, enlaces rotos ni código de ejemplo que no funcione.
+
+8. Pruebas obligatorias
+
+Antes de terminar:
+
+1. Comprueba que se puede iniciar el audio desde Safari.
+2. Prueba las notas graves y agudas.
+3. Comprueba que los nueve instrumentos suenan diferentes.
+4. Toca varios acordes simultáneamente.
+5. Comprueba que las notas no se cortan de forma brusca.
+6. Verifica que la reverberación continúa después de soltar las teclas.
+7. Prueba el sustain y el cambio de octava.
+8. Comprueba la interfaz en una pantalla de iPad y en una de móvil.
+9. Corrige los errores encontrados antes de dar el proyecto por terminado.
+
+Entrega final: una aplicación Nuvikey funcional, con sonidos musicales de calidad, resonancia realista, nueve instrumentos y una interfaz bonita. Prioriza que el audio funcione correctamente por encima de añadir más efectos visuales.
+
+No afirmes que una función está probada si no la has comprobado realmente. Si alguna característica requiere archivos de audio o servicios externos, indícalo y configura una alternativa funcional.
