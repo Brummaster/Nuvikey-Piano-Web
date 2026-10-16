@@ -33,17 +33,24 @@ const INSTRUMENTS: { id: InstrumentId; label: string }[] = [
   { id: 'violin', label: 'Violín' },
 ];
 
-const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A', 'A♯', 'B'];
+const NOTE_NAMES = ['Do', 'Do♯', 'Re', 'Re♯', 'Mi', 'Fa', 'Fa♯', 'Sol', 'Sol♯', 'La', 'La♯', 'Si'];
 const BLACK_PITCHES = new Set([1, 3, 6, 8, 10]);
 const COMPUTER_KEYS = [
   'a', 'w', 's', 'e', 'd', 'f', 't', 'g', 'y', 'h', 'u', 'j',
   'k', 'o', 'l', 'p', ';', "'", ']', '\\', '2', '3', '5', '6',
 ];
 
-type KeyDescription = { midi: number; label: string; isBlack: boolean; whiteIndex: number };
+type KeyDescription = {
+  midi: number;
+  label: string;
+  accessibleLabel: string;
+  isBlack: boolean;
+  whiteIndex: number;
+};
 
-function noteName(midi: number) {
-  return `${NOTE_NAMES[midi % 12]}${Math.floor(midi / 12) - 1}`;
+function noteName(midi: number, includeOctave = true) {
+  const name = NOTE_NAMES[midi % 12];
+  return includeOctave ? `${name}${Math.floor(midi / 12) - 1}` : name;
 }
 
 function Keyboard({ octave, activeNotes, instrument, onStart, onStop }: {
@@ -60,7 +67,13 @@ function Keyboard({ octave, activeNotes, instrument, onStart, onStop }: {
     return Array.from({ length: 24 }, (_, offset) => {
       const midi = startMidi + offset;
       const isBlack = BLACK_PITCHES.has(midi % 12);
-      const description = { midi, label: noteName(midi), isBlack, whiteIndex };
+      const description = {
+        midi,
+        label: noteName(midi, !isBlack),
+        accessibleLabel: noteName(midi),
+        isBlack,
+        whiteIndex,
+      };
       if (!isBlack) whiteIndex += 1;
       return description;
     });
@@ -93,9 +106,9 @@ function Keyboard({ octave, activeNotes, instrument, onStart, onStop }: {
           key={key.midi}
           type="button"
           className={`white-key${activeNotes.includes(key.midi) ? ' active' : ''}`}
-          aria-label={`Tocar ${key.label}`}
+          aria-label={`Tocar ${key.accessibleLabel}`}
           aria-pressed={activeNotes.includes(key.midi)}
-          data-testid={`key-${key.label.replace('♯', 'sharp')}`}
+          data-testid={`key-${key.label.replace('♯', 'sharp')}-${key.midi}`}
           onPointerDown={(event) => press(event, key)}
           onPointerUp={release}
           onPointerCancel={release}
@@ -110,9 +123,9 @@ function Keyboard({ octave, activeNotes, instrument, onStart, onStop }: {
           type="button"
           className={`black-key${activeNotes.includes(key.midi) ? ' active' : ''}`}
           style={{ left: `${((key.whiteIndex - 0.29) / 14) * 100}%` }}
-          aria-label={`Tocar ${key.label}`}
+          aria-label={`Tocar ${key.accessibleLabel}`}
           aria-pressed={activeNotes.includes(key.midi)}
-          data-testid={`key-${key.label.replace('♯', 'sharp')}`}
+          data-testid={`key-${key.label.replace('♯', 'sharp')}-${key.midi}`}
           onPointerDown={(event) => press(event, key)}
           onPointerUp={release}
           onPointerCancel={release}
