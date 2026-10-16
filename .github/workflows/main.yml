@@ -31,3 +31,4 @@ jobs:
           PORT: 5000
           BASE_PATH: /
           NODE_ENV: production
+          
